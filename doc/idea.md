@@ -25,7 +25,8 @@ Méthodes des interfaces API:
 - vote créneaux pour une session
 - clotureé votes crénaux
 
-- obtenir la fiche de match 
+- obtenir la fiche de match
+- histotique de match
 
 ## Découpage naif
 
@@ -94,17 +95,17 @@ Méthodes des interfaces API:
 /session/{id}/date/{aDate}/period/{hour}  PUT   vote d'une période de date
 {["aPeriod": bool]}
 
-/session/{id}/date/{aDate}/period/{hour}/members GET  paricipant retnu ?waiting=false
-/session/{id}/date/{aDate}/period/{hour}/members GET  paricipant en attente ?waiting=true
+/session/{id}/date/{aDate}/period/{hour}/members GET  participant retenu ?waiting=false
+/session/{id}/date/{aDate}/period/{hour}/members GET  participant en attente ?waiting=true
 
 
 
 /session/{id}/period  GET  liste dates
-/session/{id}/members GET  paricipant retnu ?waiting=false  ?status: 
+/session/{id}/members GET  paricipant retenu ?waiting=false  ?status: 
 
 
 {type} = hour, date
 /session/{id}/sondage/{type} GET  liste des possibilité de votes
 ["str1", "str2"]
-/session/{id}/sondage/{type} PUT voté pour une posibilié
+/session/{id}/sondage/{type} PUT voté pour une possibilié
 {value: bool} 
