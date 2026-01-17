@@ -57,17 +57,17 @@ Méthodes des interfaces API:
 - obtenir un token
 
 2eme microservice:
-- création d'une sesssion (user admin)
+- création d'une session (user admin)
 - list des sessions (+filtre)
-- obtenir une sesssion
+- obtenir une session
 
 - obtenir votes dates d'une session
-- votes d'une date ppour une session (std user)
+- votes d'une date pour une session (std user)
 - cloture des votes dates (owner admin)
 
-- obtenir votes crénaux d'une session
+- obtenir votes créneaux d'une session
 - vote créneaux pour une session
-- clotureé votes crénaux
+- cloturé votes créneaux
 
 3eme microservice:
 

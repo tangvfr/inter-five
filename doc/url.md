@@ -2,7 +2,9 @@
 
 ## authentification
 
-UserDto(String mail,String username, @JsonIgnore @Nullable=true String password )
+```java
+UserDto(String mail, String username, @JsonIgnore @Nullable=true String password)
+```
 
 | url              | Méthode(GET, POST..) | filtre | code erreur   |                  type entrée                  |  type retour  |                 description                 |
 |:-----------------|:--------------------:|:------:|:--------------|:---------------------------------------------:|:-------------:|:-------------------------------------------:|
@@ -12,20 +14,17 @@ UserDto(String mail,String username, @JsonIgnore @Nullable=true String password 
 | `/profil/{id}`   |         GET          |   -    | 403, 404      |                       -                       |    UserDto    |     Récuperation du profile utilisateur     |
 | `/profil/{id}`   |         PUT          |   -    | 403, 404, 409 |                    UserDto                    |    UserDto    | Changement mail/username/(password->passur) |
 | `/profil/{id}`   |        DELETE        |   -    | 403, 404      |                       -                       |       -       |            Suppression du compte            |
-|                  |                      |        |               |                                               |               |
-|                  |                      |        |               |                                               |               |
-|                  |                      |        |               |                                               |               |
 
 ## vote
 
-| url                | Méthode(GET, POST..) |                         filtre                         | code erreur |                            type entrée                            | type retour | description |
-|:-------------------|:--------------------:|:------------------------------------------------------:|:-----------:|:-----------------------------------------------------------------:|------------:|------------:| 
-| `/match`           |         GET          | member (à comme participant), owner (a comme créateur) |             |                   Liste [Match DTO](#Match-DTO)                   |             |             |
-| `/match`           |         PUT          |                                                        |             |             [Creation Match DTO](#Creation-Match-DTO)             |             |             |
-| `/match/{matchId}` |         GET          |                                                        |             |                                                                   |             |             |
-|                    |                      |                                                        |             |                                                                   |             |             |
-|                    |                      |                                                        |             |                                                                   |             |             |
-|                    |                      |                                                        |             |                                                                   |             |             |
+| url                | Méthode(GET, POST..) |                         filtre                         | code erreur |                type entrée                | type retour | description |
+|:-------------------|:--------------------:|:------------------------------------------------------:|:-----------:|:-----------------------------------------:|------------:|------------:| 
+| `/match`           |         GET          | member (à comme participant), owner (a comme créateur) |             |       Liste [Match DTO](#Match-DTO)       |             |             |
+| `/match`           |         PUT          |                                                        |             | [Creation Match DTO](#Creation-Match-DTO) |             |             |
+| `/match/{matchId}` |         GET          |                                                        |             |                                           |             |             |
+|                    |                      |                                                        |             |                                           |             |             |
+|                    |                      |                                                        |             |                                           |             |             |
+|                    |                      |                                                        |             |                                           |             |             |
 
 ### Creation Match DTO
 
@@ -44,3 +43,8 @@ votedHour: string
 ```
 
 ## hist
+
+| url               | Méthode(GET, POST..) | filtre | code erreur |            type entrée            |   type retour    |                      description                      |
+|:------------------|:--------------------:|:------:|:------------|:---------------------------------:|:----------------:|:-----------------------------------------------------:|
+| `/match/resultat` |         GET          |   -    | 404         |                                   | feuille de route | une fois les votes fini; donne la feuille de resultat |
+| `/match/resultat` |         PUT          |        | 400         | le match avec tous les votes fini |        -         |                 sauvegarder le match                  |
