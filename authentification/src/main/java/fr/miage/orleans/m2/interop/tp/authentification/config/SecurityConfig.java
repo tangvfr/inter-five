@@ -1,17 +1,12 @@
 package fr.miage.orleans.m2.interop.tp.authentification.config;
 
-import static org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType.H2;
-
 import com.nimbusds.jose.jwk.JWK;
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
-import fr.orleans.miage.m2.aar.authentification.model.Role;
-import java.time.Instant;
-import java.util.function.Function;
-import javax.sql.DataSource;
+import fr.miage.orleans.m2.interop.tp.authentification.model.Role;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -34,6 +29,12 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtGra
 import org.springframework.security.provisioning.JdbcUserDetailsManager;
 import org.springframework.security.provisioning.UserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
+
+import javax.sql.DataSource;
+import java.time.Instant;
+import java.util.function.Function;
+
+import static org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType.H2;
 
 @Slf4j
 @Configuration
@@ -105,7 +106,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(reg -> reg
                         .requestMatchers(HttpMethod.GET, "/actuator/health").permitAll() // health check de consul
                         .requestMatchers(HttpMethod.POST, "/api/utilisateurs").permitAll() // inscription
-                        .requestMatchers(HttpMethod.POST, "/api/login").permitAll() // connexion
+                        .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll() // connexion
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2

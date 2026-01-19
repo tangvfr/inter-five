@@ -1,4 +1,4 @@
-package fr.orleans.miage.m2.aar.authentification;
+package fr.miage.orleans.m2.interop.tp.authentification;
 
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
