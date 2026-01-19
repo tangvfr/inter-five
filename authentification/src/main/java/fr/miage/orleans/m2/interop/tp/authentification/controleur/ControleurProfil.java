@@ -1,39 +1,46 @@
 package fr.miage.orleans.m2.interop.tp.authentification.controleur;
 
-import jakarta.validation.Valid;
-import java.net.URI;
-import java.util.List;
-
-import org.springframework.http.HttpStatus;
+import fr.miage.orleans.m2.interop.tp.authentification.model.User;
+import fr.miage.orleans.m2.interop.tp.authentification.service.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.provisioning.UserDetailsManager;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.util.UriComponentsBuilder;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/profil")
 public class ControleurProfil {
 
-    private final UserDetailsManager users;
+    private final UserService userService;
 
-    public ControleurProfil(UserDetailsManager users) {
-        this.users = users;
+    public ControleurProfil(UserService userService) {
+        this.userService = userService;
     }
 
 
     @GetMapping("")
     @PreAuthorize("hasRole('ENSEIGNANT')")
-    public ResponseEntity<List<UserDetails>> getAllProfil() {
-        return ResponseEntity.ok(users.toString());
+    public ResponseEntity<List<User>> getAllProfil() {
+        return ResponseEntity.ok(this.userService.getAllUser());
     }
 
     @GetMapping("/{id}")
-    // @PreAuthorize("hasRole('ENSEIGNANT')")
-    public ResponseEntity<UserDetails> getProfil(@PathVariable Long id) {
-        return ResponseEntity.ok(users.loadUserByUsername(id));
+    @PreAuthorize("#id == authentication.name")
+    public ResponseEntity<User> getProfil(@PathVariable Long id) {
+        return ResponseEntity.ok(this.userService.getUser(id));
+    }
 
+    @PutMapping("/{id}")
+    @PreAuthorize("#id == authentication.name")
+    public ResponseEntity<User> updateProfil(@PathVariable Long id, @RequestBody ControleurAuth.LoginRequest req) {
+        return ResponseEntity.ok(this.userService.updateUser(id, req.username(), req.password()));
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("#id == authentication.name")
+    public ResponseEntity<String> deleteProfil(@PathVariable Long id) {
+        this.userService.deleteUser(id);
+        return ResponseEntity.noContent().build();
     }
 }
