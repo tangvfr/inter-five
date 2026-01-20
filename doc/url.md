@@ -18,14 +18,17 @@ UserDto(String mail,String username, @JsonIgnore @Nullable=true String password 
 
 ## vote
 
-| url                | Méthode(GET, POST..) |                         filtre                         | code erreur |                            type entrée                            | type retour | description |
-|:-------------------|:--------------------:|:------------------------------------------------------:|:-----------:|:-----------------------------------------------------------------:|------------:|------------:| 
-| `/match`           |         GET          | member (à comme participant), owner (a comme créateur) |             |                   Liste [Match DTO](#Match-DTO)                   |             |             |
-| `/match`           |         PUT          |                                                        |             |             [Creation Match DTO](#Creation-Match-DTO)             |             |             |
-| `/match/{matchId}` |         GET          |                                                        |             |                                                                   |             |             |
-|                    |                      |                                                        |             |                                                                   |             |             |
-|                    |                      |                                                        |             |                                                                   |             |             |
-|                    |                      |                                                        |             |                                                                   |             |             |
+| url                     | Méthode(GET, POST..) |                         filtre                         | code erreur |                type entrée                |                   type retour | description |
+|:------------------------|:--------------------:|:------------------------------------------------------:|:-----------:|:-----------------------------------------:|------------------------------:|------------:| 
+| `/match`                |         GET          | member (à comme participant), owner (a comme créateur) |             |                                           | Liste [Match DTO](#Match-DTO) |             |
+| `/match`                |         PUT          |                                                        |             | [Creation Match DTO](#Creation-Match-DTO) |                          UUID |             |
+| `/match/{matchId}`      |         GET          |                                                        |             |               path(matchID)               |       [Match DTO](#Match-DTO) |             |
+| `/match/{matchId}/date` |         GET          |                                                        |             |                                           |                               |             |
+| `/match/{matchId}/date` |         PUT          |                                                        |             |                array<str>                 |                               |             |
+| `/match/{matchId}/hour` |         GET          |                                                        |             |                                           |                               |             |
+| `/match/{matchId}/hour` |         PUT          |                                                        |             |                array<str>                 |                               |             |
+|                         |                      |                                                        |             |                                           |                               |             |
+|                         |                      |                                                        |             |                                           |                               |             |
 
 ### Creation Match DTO
 
