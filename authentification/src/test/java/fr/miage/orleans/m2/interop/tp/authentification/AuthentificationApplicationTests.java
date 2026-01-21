@@ -7,6 +7,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.function.Function;
+
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -39,7 +41,7 @@ class AuthentificationApplicationTests {
     @Autowired
     ObjectMapper objectMapper;
 
-    //@Test
+    @Test
     void testLogin() throws Exception {
 
         String email = "test@univ-orleans.fr";
@@ -55,7 +57,7 @@ class AuthentificationApplicationTests {
         when(passwordEncoder.matches(rawPassword, encodedPassword)).thenReturn(true);
         when(genereTokenFunction.apply(userDetails)).thenReturn("tokenValue");
 
-        mvc.perform(post("/api/login")
+        mvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginDTO)))
                 .andExpect(status().isOk())
@@ -73,7 +75,7 @@ class AuthentificationApplicationTests {
 
         when(userDetailsManager.userExists(email)).thenReturn(false);
 
-        mvc.perform(post("/api/login")
+        mvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginDTO)))
                 .andExpect(status().isUnauthorized());
@@ -94,7 +96,7 @@ class AuthentificationApplicationTests {
         when(userDetailsManager.loadUserByUsername(email)).thenReturn(userDetails);
         when(passwordEncoder.matches(rawPassword, encodedPassword)).thenReturn(false);
 
-        mvc.perform(post("/api/login")
+        mvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginDTO)))
                 .andExpect(status().isUnauthorized());
