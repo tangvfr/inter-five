@@ -2,7 +2,9 @@
 
 ## authentification
 
-UserDto(String mail,String username, @JsonIgnore @Nullable=true String password )
+```java
+UserDto(String mail, String username, @JsonIgnore @Nullable=true String password)
+```
 
 | url              | Méthode(GET, POST..) | filtre | code erreur   |                  type entrée                  |  type retour  |                 description                 |
 |:-----------------|:--------------------:|:------:|:--------------|:---------------------------------------------:|:-------------:|:-------------------------------------------:|
