@@ -4,6 +4,8 @@ import fr.miage.orleans.m2.interop.tp.authentification.model.User;
 import java.util.Optional;
 import org.springframework.data.repository.CrudRepository;
 
+import java.util.Optional;
+
 public interface UserDao extends CrudRepository<User, Long> {
     Optional<User> findUserByMail(String mail);
 }
