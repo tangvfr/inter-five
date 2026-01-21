@@ -1,107 +1,78 @@
 package fr.miage.orleans.m2.interop.tp.authentification.controleur;
 
+import fr.miage.orleans.m2.interop.tp.authentification.model.User;
+import fr.miage.orleans.m2.interop.tp.authentification.model.exception.PasswordIncorrectException;
+import fr.miage.orleans.m2.interop.tp.authentification.model.exception.UserInexistantException;
+import fr.miage.orleans.m2.interop.tp.authentification.service.UserService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
+import java.net.URI;
+import java.util.function.Function;
 import org.hibernate.validator.constraints.Length;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.UserDetailsManager;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import java.net.URI;
-import java.util.function.Function;
-
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/auth")
 public class ControleurAuth {
-    protected static final Logger logger = LoggerFactory.getLogger(ControleurAuth.class);
-    private final PasswordEncoder passwordEncoder;
-    private final Function<UserDetails, String> genereTokenFunction;
-    private final UserDetailsManager users;
+  protected static final Logger logger = LoggerFactory.getLogger(ControleurAuth.class);
+  private final PasswordEncoder passwordEncoder;
+  private final Function<User, String> genereTokenFunction;
+  private final UserService userService;
 
-    public ControleurAuth(
-            PasswordEncoder passwordEncoder,
-            Function<UserDetails, String> genereTokenFunction,
-            UserDetailsManager users) {
-        this.passwordEncoder = passwordEncoder;
-        this.genereTokenFunction = genereTokenFunction;
-        this.users = users;
-    }
+  public ControleurAuth(
+      PasswordEncoder passwordEncoder,
+      Function<User, String> genereTokenFunction,
+      UserService userService) {
+    this.passwordEncoder = passwordEncoder;
+    this.genereTokenFunction = genereTokenFunction;
+    this.userService = userService;
+  }
 
-    @PostMapping("/login")
-    public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest req)
-            throws UsernameNotFoundException {
-        if (users.userExists(req.username())) {
-            // l'utilisateur existe : on teste son mot de passe
-            String name = req.username();
-            UserDetails user = users.loadUserByUsername(name);
-            logger.info("Nouveau user connecter : {}", user.getUsername());
-            if (passwordEncoder.matches(req.password(), user.getPassword())) {
-                String token = genereTokenFunction.apply(user);
-                // (optionnel) expose TTL si tu veux
-                return ResponseEntity.ok(new LoginResponse(token, "Bearer"));
-            }
-        }
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-    }
+  @PostMapping("/login")
+  public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest req)
+      throws UserInexistantException, PasswordIncorrectException {
 
-    @PostMapping("/utilisateurs")
-    @PreAuthorize("hasRole('ENSEIGNANT')")
-    public ResponseEntity<UserDetails> inscrire(
-            @RequestBody @Valid RegisterRequest req, UriComponentsBuilder base) {
-        if (users.userExists(req.username())) {
-            // l'utilisateur existe déjà : conflit
-            return ResponseEntity.status(HttpStatus.CONFLICT).build();
-        }
-        UserDetails user =
-                User.builder()
-                        .username(req.username())
-                        .password(passwordEncoder.encode(req.password()))
-                        .roles(req.roles().split(","))
-                        .build();
-        users.createUser(user);
-        URI location =
-                base.path("/api/utilisateurs/{username}").buildAndExpand(user.getUsername()).toUri();
-        return ResponseEntity.created(location).body(user);
-    }
+    User user = userService.connection(req.username, req.password);
+    String token = genereTokenFunction.apply(user);
+    logger.info("Nouveau user connecter : {}", user.getMail());
+    return ResponseEntity.ok(new LoginResponse(token, "Bearer"));
+  }
 
-    @GetMapping("/utilisateurs/{username}")
-    @PreAuthorize("hasRole('ENSEIGNANT') or #username == authentication.name")
-    public ResponseEntity<UserDetails> getProfile(@PathVariable String username) {
-        UserDetails user = this.users.loadUserByUsername(username);
-        return ResponseEntity.ok(user);
-    }
+  @PostMapping("/register")
+  public ResponseEntity<User> inscrire(
+      @RequestBody @Valid RegisterRequest req, UriComponentsBuilder base) {
 
-    // demonstration d'API, sur un autre serveur
-    @GetMapping("/hello")
-    @PreAuthorize("hasRole('ETUDIANT')")
-    public ResponseEntity<String> demo() {
-        return ResponseEntity.ok("Hello World");
+    if (userService.userExists(req.username())) {
+      return ResponseEntity.status(HttpStatus.CONFLICT).build();
     }
+    User user = new User(req.username, req.password);
+    userService.createUser(user);
+    logger.info("Nouveau user créer : {}", user.getMail());
+    URI location = base.path("/utilisateurs/{id}").buildAndExpand(user.getIdUser()).toUri();
+    return ResponseEntity.created(location).body(user);
+  }
 
-    @GetMapping("/hellochef")
-    @PreAuthorize("hasRole('ENSEIGNANT')")
-    public ResponseEntity<String> demoAdmin() {
-        return ResponseEntity.ok("CHEF oui CHEF !");
-    }
+  @GetMapping("/profil/{id}")
+  @PreAuthorize("#id == authentication.id")
+  public ResponseEntity<User> getProfile(@PathVariable Long id) throws UserInexistantException {
 
-    record LoginRequest(String username, String password) {
-    }
+    User user = this.userService.getUser(id);
+    return ResponseEntity.ok(user);
+  }
 
-    record LoginResponse(String accessToken, String tokenType) {
-    }
+  record LoginRequest(String username, String password) {}
 
-    record RegisterRequest(
-            @Length(min = 4, max = 25) String username,
-            @Length(min = 4, max = 25) String password,
-            @NotNull String roles) {
-    }
+  record LoginResponse(String accessToken, String tokenType) {}
+
+  record RegisterRequest(
+      @Length(min = 4, max = 25) String username,
+      @Length(min = 4, max = 25) String password,
+      @NotNull String roles) {}
 }
