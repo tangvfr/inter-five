@@ -8,33 +8,26 @@ import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
 import fr.miage.orleans.m2.interop.tp.authentification.model.Role;
 import fr.miage.orleans.m2.interop.tp.authentification.model.User;
-import lombok.extern.slf4j.Slf4j;
+import java.time.Instant;
+import java.util.Set;
+import java.util.function.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
-import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.jdbc.JdbcDaoImpl;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jwt.*;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
-
-import javax.sql.DataSource;
-import java.time.Instant;
-import java.util.List;
-import java.util.function.Function;
-
-import static org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType.H2;
 
 @Configuration
 @EnableWebSecurity
@@ -48,7 +41,7 @@ public class SecurityConfig {
     @Value("${security.jwt.issuer:auth-service}")
     String issuer;
 
-    @Value("${security.jwt.expiration-minutes:15}")
+    @Value("${security.jwt.expiration-minutes}")
     int expirationMinutes;
 
     public SecurityConfig(KeyPairManager keyPairManager) {
@@ -56,27 +49,21 @@ public class SecurityConfig {
         log.info("SecurityConfig initialisé avec KeyPairManager");
     }
 
-    private static String[] getRoles(List<Role> roles) {
-        return new String[]{roles.toString()};
+    private static String[] getRoles(Set<Role> roles) {
+        return roles.stream().map(Role::name).toArray(String[]::new);
     }
 
     @Bean
     PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
+        return PasswordEncoderFactories.createDelegatingPasswordEncoder();
     }
 
-    @Bean
-    DataSource dataSource() {
-        return new EmbeddedDatabaseBuilder()
-                .setType(H2)
-                .addScript(JdbcDaoImpl.DEFAULT_USER_SCHEMA_DDL_LOCATION)
-                .build();
-    }
+    // Removed JDBC connection creation to use only JPA
 
     @Bean
     SecurityFilterChain api(HttpSecurity http, JwtDecoder decoder, JwtAuthenticationConverter jac)
             throws Exception {
-        http.securityMatcher("/api/**")
+        http.securityMatcher("/auth/**")
                 // .csrf(csrf -> csrf.disable())
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -84,9 +71,9 @@ public class SecurityConfig {
                         reg ->
                                 reg.requestMatchers(HttpMethod.GET, "/actuator/health")
                                         .permitAll() // health check de consul
-                                        .requestMatchers(HttpMethod.POST, "/api/auth/register")
+                                        .requestMatchers(HttpMethod.POST, "/auth/register")
                                         .permitAll() // inscription
-                                        .requestMatchers(HttpMethod.POST, "/api/auth/login")
+                                        .requestMatchers(HttpMethod.POST, "/auth/login")
                                         .permitAll() // connexion
                                         .anyRequest()
                                         .authenticated())
@@ -122,10 +109,10 @@ public class SecurityConfig {
     }
 
     @Bean
-    Function<User, String> genereTokenFunction(JwtEncoder jwtEncoder) {
+    Function<User, String> generateTokenFunction(JwtEncoder jwtEncoder) {
         return user -> {
             Instant now = Instant.now();
-            String[] roles = getRoles(user.getRole());
+            String[] roles = getRoles(user.getRoles());
             JwtClaimsSet claims =
                     JwtClaimsSet.builder()
                             .issuer(issuer)

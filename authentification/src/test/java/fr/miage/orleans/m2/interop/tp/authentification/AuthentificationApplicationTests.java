@@ -1,106 +1,69 @@
 package fr.miage.orleans.m2.interop.tp.authentification;
 
-import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.function.Function;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.UserDetailsManager;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-// TODO refaire les tests
 @SpringBootTest
 @AutoConfigureMockMvc
 class AuthentificationApplicationTests {
 
-    @Autowired
-    MockMvc mvc;
+  @Autowired MockMvc mvc;
 
-    @MockitoBean
-    PasswordEncoder passwordEncoder;
+  @MockitoBean PasswordEncoder passwordEncoder;
 
-    @MockitoBean
-    Function<UserDetails, String> genereTokenFunction;
+  @MockitoBean Function<UserDetails, String> generateTokenFunction;
 
-    @MockitoBean(name = "users")
-    UserDetailsManager userDetailsManager;
+  @MockitoBean(name = "users")
+  UserDetailsManager userDetailsManager;
 
+  @Test
+  @WithMockUser(
+      username = "test@univ-orleans.fr",
+      roles = {"ETUDIANT"})
+  void testGetProfileUnauthorized() throws Exception {
+    // Attempt to access another user's profile
+    mvc.perform(
+            get("/auth/profil/2") // Assuming current user has ID 1
+                .contentType(MediaType.APPLICATION_JSON))
+        .andExpect(status().isForbidden()); // Should be denied by @PreAuthorize
+  }
 
-    @Autowired
-    ObjectMapper objectMapper;
+  @Test
+  @WithMockUser(
+      username = "teacher@univ-orleans.fr",
+      roles = {"ENSEIGNANT"})
+  void testGetAllProfilesAsTeacher() throws Exception {
+    mvc.perform(get("/auth/profil").contentType(MediaType.APPLICATION_JSON))
+        .andExpect(status().isOk());
+  }
 
-    @Test
-    void testLogin() throws Exception {
+  @Test
+  void testGetAllProfilesUnauthorized() throws Exception {
+    // No auth
+    mvc.perform(get("/auth/profil").contentType(MediaType.APPLICATION_JSON))
+        .andExpect(status().isUnauthorized());
+  }
 
-        String email = "test@univ-orleans.fr";
-        String rawPassword = "passwordtestclair";
-        String encodedPassword = "passwordtestencode";
-
-        LoginRequest loginDTO = new LoginRequest(email, rawPassword);
-
-        UserDetails userDetails = User.withUsername(email).password(encodedPassword).roles("ETUDIANT").build();
-
-        when(userDetailsManager.userExists(email)).thenReturn(true);
-        when(userDetailsManager.loadUserByUsername(email)).thenReturn(userDetails);
-        when(passwordEncoder.matches(rawPassword, encodedPassword)).thenReturn(true);
-        when(genereTokenFunction.apply(userDetails)).thenReturn("tokenValue");
-
-        mvc.perform(post("/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(loginDTO)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.accessToken").value("tokenValue"))
-                .andExpect(jsonPath("$.tokenType").value("Bearer"));
-    }
-
-    //@Test
-    void testLoginUtilisateurInexistant() throws Exception {
-
-        String email = "test@univ-orleans.fr";
-        String rawPassword = "passwordtestclair";
-
-        LoginRequest loginDTO = new LoginRequest(email, rawPassword);
-
-        when(userDetailsManager.userExists(email)).thenReturn(false);
-
-        mvc.perform(post("/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(loginDTO)))
-                .andExpect(status().isUnauthorized());
-    }
-
-    //@Test
-    void testLoginMotDePasseInvalide() throws Exception {
-
-        String email = "test@univ-orleans.fr";
-        String rawPassword = "passwordtestclair";
-        String encodedPassword = "passwordtestencode";
-
-        LoginRequest loginDTO = new LoginRequest(email, rawPassword);
-
-        UserDetails userDetails = User.withUsername(email).password(encodedPassword).roles("ETUDIANT").build();
-
-        when(userDetailsManager.userExists(email)).thenReturn(true);
-        when(userDetailsManager.loadUserByUsername(email)).thenReturn(userDetails);
-        when(passwordEncoder.matches(rawPassword, encodedPassword)).thenReturn(false);
-
-        mvc.perform(post("/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(loginDTO)))
-                .andExpect(status().isUnauthorized());
-    }
-
-    record LoginRequest(String username, String password) {}
+  @Test
+  @WithMockUser(
+      username = "student@univ-orleans.fr",
+      roles = {"ETUDIANT"})
+  void testGetAllProfilesAsStudent() throws Exception {
+    // Student should not access all profiles
+    mvc.perform(get("/auth/profil").contentType(MediaType.APPLICATION_JSON))
+        .andExpect(status().isForbidden());
+  }
 }

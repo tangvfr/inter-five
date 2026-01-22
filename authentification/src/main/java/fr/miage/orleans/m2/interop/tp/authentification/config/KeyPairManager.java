@@ -3,12 +3,6 @@ package fr.miage.orleans.m2.interop.tp.authentification.config;
 import com.ecwid.consul.v1.ConsulClient;
 import com.ecwid.consul.v1.kv.model.PutParams;
 import jakarta.annotation.PostConstruct;
-import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -22,6 +16,12 @@ import java.security.interfaces.RSAPublicKey;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
+import java.util.Locale;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.MessageSource;
+import org.springframework.stereotype.Component;
 
 @Component
 public class KeyPairManager {
@@ -29,21 +29,25 @@ public class KeyPairManager {
     private static final Logger log = LoggerFactory.getLogger(KeyPairManager.class);
 
     private final ConsulClient consulClient;
+    private final MessageSource messageSource;
 
+    // ToDo to remove
     @Value("${jwt.key.private-path:/app/keys/private_key.pem}")
     private String privateKeyPath;
 
+    // ToDo to remove
     @Value("${jwt.key.public-path:/app/keys/public_key.pem}")
     private String publicKeyPath;
 
-    @Value("${jwt.key.consul-path:config/jwt/public-key}")
+    @Value("${jwt.key.consul-path}")
     private String consulKeyPath;
 
     private RSAPrivateKey privateKey;
     private RSAPublicKey publicKey;
 
-    public KeyPairManager(ConsulClient consulClient) {
+    public KeyPairManager(ConsulClient consulClient, MessageSource messageSource) {
         this.consulClient = consulClient;
+        this.messageSource = messageSource;
     }
 
     @PostConstruct
@@ -90,12 +94,12 @@ public class KeyPairManager {
                     Thread.sleep(attemptDelay);
                 } catch (InterruptedException ie) {
                     Thread.currentThread().interrupt();
-                    throw new RuntimeException("Attente de Consul interrompue", ie);
+                    throw new RuntimeException(messageSource.getMessage("consulWaitInterrupted", null, Locale.getDefault()), ie);
                 }
             }
         }
         throw new RuntimeException(
-                "Consul n'est pas disponible après " + maxAttempts + " tentatives");
+                messageSource.getMessage("consulUnavailable", new Object[]{maxAttempts}, Locale.getDefault()));
     }
 
     private void generateNewKeyPair() throws Exception {
@@ -112,7 +116,7 @@ public class KeyPairManager {
         savePublicKey(this.publicKey);
 
         log.info("✓ Nouvelle paire de clés générée et sauvegardée");
-        log.info("  - Clé privée : {}", privateKeyPath);
+        // log.info("  - Clé privée : {}", privateKeyPath);
         log.info("  - Clé publique : {}", publicKeyPath);
     }
 
@@ -154,7 +158,7 @@ public class KeyPairManager {
 
         } catch (Exception e) {
             log.error("✗ Erreur lors de la publication de la clé publique dans Consul", e);
-            throw new RuntimeException("Impossible de publier la clé publique", e);
+            throw new RuntimeException(messageSource.getMessage("publishKeyFailed", null, Locale.getDefault()), e);
         }
     }
 
@@ -196,14 +200,14 @@ public class KeyPairManager {
 
     public RSAPrivateKey getPrivateKey() {
         if (privateKey == null) {
-            throw new IllegalStateException("La clé privée n'est pas initialisée");
+            throw new IllegalStateException(messageSource.getMessage("privateKeyNotInitialized", null, Locale.getDefault()));
         }
         return privateKey;
     }
 
     public RSAPublicKey getPublicKey() {
         if (publicKey == null) {
-            throw new IllegalStateException("La clé publique n'est pas initialisée");
+            throw new IllegalStateException(messageSource.getMessage("publicKeyNotInitialized", null, Locale.getDefault()));
         }
         return publicKey;
     }

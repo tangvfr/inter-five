@@ -2,14 +2,11 @@ package fr.miage.orleans.m2.interop.tp.authentification.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+import java.util.HashSet;
+import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 
 @Entity
 @Table(name = "users")
@@ -45,16 +42,7 @@ public class User {
         this.password = password;
         this.roles = roles != null ? roles : new HashSet<>();
     }
-
-    // Méthodes pour compatibilité avec code existant
-    public List<Role> getRole() {
-        return new ArrayList<>(roles);
-    }
-
-    public void setRole(List<Role> role) {
-        this.roles = role != null ? new HashSet<>(role) : new HashSet<>();
-    }
-
+    
     public void addRole(Role role) {
         this.roles.add(role);
     }
